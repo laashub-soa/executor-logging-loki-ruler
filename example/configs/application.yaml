@@ -1,0 +1,20 @@
+# #############################告警配置
+# 钉钉webhook配置
+dingding_webhook_access_token:
+  - 1
+# at人的最大容忍次数
+maximum_tolerance_count: 10
+# loki的基础查询地址
+loki_base_uri: http://test.loki.com:3100
+# #############################用户
+# 用户组及用户
+# 用户信息: 用户码: 用户名称-手机号码
+user_info:
+  test: test-12345678901
+# 用户关注服务
+user_follow_service:
+  test:
+    - test
+# #############################服务
+# 服务列表, 确保每个服务都有人关注
+#test
