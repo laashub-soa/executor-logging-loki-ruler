@@ -88,15 +88,15 @@ class LokiRuler(object):
             if ori_time_duration > 3600:  # 超过1个小时
                 if ori_time_duration > 86400:  # 超过1个天
                     if ori_time_duration > 2678400:  # 超过1个月
-                        result += str(ori_time_duration / 2678400) + "月"
+                        result += str(int(ori_time_duration / 2678400)) + "月"
                         ori_time_duration = ori_time_duration % 2678400
-                    result += str(ori_time_duration / 86400) + "天"
+                    result += str(int(ori_time_duration / 86400)) + "天"
                     ori_time_duration = ori_time_duration % 86400
-                result += str(ori_time_duration / 3600) + "时"
+                result += str(int(ori_time_duration / 3600)) + "时"
                 ori_time_duration = ori_time_duration % 3600
-            result += str(ori_time_duration / 60) + "分"
+            result += str(int(ori_time_duration / 60)) + "分"
             ori_time_duration = ori_time_duration % 60
-        result = str(ori_time_duration) + "秒"
+        result += str(int(ori_time_duration)) + "秒"
         return result
 
     # 获取服务点击链接
@@ -111,7 +111,6 @@ class LokiRuler(object):
             ori_alarm_data_list.append({"name": key, "count": value})
         ori_alarm_data_list.sort(key=lambda x: x["count"], reverse=True)
         alarm_msg_text = ""
-        old_damage_time_point_each = self.damage_time_point["each"]
         new_damage_time_point_each = {}
         at_user_list = []
         for item in ori_alarm_data_list:
@@ -119,17 +118,23 @@ class LokiRuler(object):
             service_count = item["count"]
             query_service_url = self.get_query_service_url(service_name)
             follow_of_users, follow_of_phones = self.get_service_follow_of_user_name_phone_list(service_name)
-            at_user_list += follow_of_phones
+            if int(self.task_data["alarm"]["maximum_tolerance_count"]) < service_count:
+                at_user_list += follow_of_phones
             new_damage_time_point_each[service_name] = self.now_time_second  # 秒钟
-            damage_time_duration = 0
-            if service_name in old_damage_time_point_each:
-                damage_time_duration = new_damage_time_point_each[service_name] - old_damage_time_point_each[
-                    service_name]
-            damage_time_duration_str = self.get_minimize_display_damage_time_duration(damage_time_duration)
+            damage_time_duration_str = "(首次)"
+            if service_name not in self.init_service_damage_time_point["each"]:
+                self.init_service_damage_time_point["each"][service_name] = self.now_time_second
+            else:
+                damage_time_duration = self.now_time_second - int(
+                    self.init_service_damage_time_point["each"][service_name])
+                damage_time_duration_str = self.get_minimize_display_damage_time_duration(damage_time_duration)
+            follow_of_phone_str = ""
+            for follow_of_phone in follow_of_phones:
+                follow_of_phone_str += "@" + str(follow_of_phone)
             alarm_msg_text += self.task_data["alarm"]["template"].format(service_name=service_name,
                                                                          query_service_url=query_service_url,
                                                                          service_count=service_count,
-                                                                         follow_of_users=follow_of_users,
+                                                                         follow_of_users=follow_of_phone_str,
                                                                          damage_time_duration=damage_time_duration_str
                                                                          ) + "\n\n"
         self.damage_time_point["each"] = new_damage_time_point_each
@@ -280,7 +285,7 @@ class LokiRuler(object):
         self.set_init_service_damage_time_point()
         # 告警
         access_token = self.task_data["common"]["dingding_webhook_access_token"][0]
-        if not self.task_data["alarm"]:
+        if not self.task_data["alarm"]["is_at"]:
             at_phone_list = []
         alarm_result = dingding_webhook.alarm(access_token, "logging", total_alarm_msg + detail_alarm_msg,
                                               at_phone_list)

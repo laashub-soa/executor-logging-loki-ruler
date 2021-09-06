@@ -20,7 +20,7 @@ import requests
 base_url = "https://oapi.dingtalk.com/robot/send"
 
 
-def alarm(access_token, title="", content="", at_mobiles=[]):
+def alarm(access_token, title, content, at_mobiles):
     request_data = {
         "msgtype": "markdown",
         "markdown": {
