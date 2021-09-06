@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+from urllib import parse
 
 from component import loki, dingding_webhook
 
@@ -42,6 +43,7 @@ class LokiRuler(object):
     def set_init_service_damage_time_point(self):
         with open(self.init_service_damage_time_point_path, "w", encoding="utf-8")as f:
             f.write(json.dumps(self.init_service_damage_time_point))
+            print(self.init_service_damage_time_point)
 
     # 获取关注服务的用户及手机号码
     def get_service_follow_of_user_name_phone_list(self, service_name):
@@ -99,10 +101,8 @@ class LokiRuler(object):
 
     # 获取服务点击链接
     def get_query_service_url(self, service_name):
-        # TODO
-        result = ""
-        result = service_name
-        return result
+        query_service_url = self.task_data["alarm"]["loki_click_base_url"].replace("{SERVICE_NAME}", service_name)
+        return self.task_data["alarm"]["loki_click_base_prefix"] + parse.quote(query_service_url)
 
     def gen_detail_alarm_msg(self, ori_alarm_data):
         ori_alarm_data_list = []
@@ -133,7 +133,8 @@ class LokiRuler(object):
                                                                          damage_time_duration=damage_time_duration_str
                                                                          ) + "\n\n"
         self.damage_time_point["each"] = new_damage_time_point_each
-        return alarm_msg_text, list(set(at_user_list))
+
+        return self.task_data["alarm"]["head_template"] + alarm_msg_text, list(set(at_user_list))
 
     def convert_query_time_range(self, query_time_range):
         """
@@ -251,17 +252,15 @@ class LokiRuler(object):
         alarm_query_end_time = self.get_single_time(self.loki_query_time_end)
         alarm_damage_service_count = total_damage_service_count
 
-        if self.init_service_damage_time_point["total"] != 0:
+        if self.init_service_damage_time_point["total"] == 0:
             alarm_damage_time_duration = "(首次)"
         else:
             alarm_damage_time_duration = self.get_minimize_display_damage_time_duration(
                 self.now_time_second - self.init_service_damage_time_point["total"])
-        self.init_service_damage_time_point["total"] = self.now_time_second
-        ""
-        total_alarm_msg = self.task_data["alarm"]["head_template"].format(query_start_time=alarm_query_start_time,
-                                                                          query_end_time=alarm_query_end_time,
-                                                                          damage_service_count=alarm_damage_service_count,
-                                                                          damage_time_duration=alarm_damage_time_duration) + "\n\n"
+        total_alarm_msg = self.task_data["alarm"]["total_template"].format(query_start_time=alarm_query_start_time,
+                                                                           query_end_time=alarm_query_end_time,
+                                                                           damage_service_count=alarm_damage_service_count,
+                                                                           damage_time_duration=alarm_damage_time_duration) + "\n\n"
         return total_alarm_msg, service_damage
 
     def start(self):
