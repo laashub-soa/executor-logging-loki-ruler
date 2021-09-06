@@ -73,7 +73,7 @@ class LokiRuler(object):
     def get_single_time(self, time_point):
         time_point_timestamp = time_point / 1000000 / 1000
         target_datetime = datetime.datetime.fromtimestamp(time_point_timestamp)
-        return str(target_datetime.hour) + "-" + str(target_datetime.minute)
+        return str(target_datetime.hour) + ":" + str(target_datetime.minute)
 
     # 获取最小化显示受损时间持续段
     def get_minimize_display_damage_time_duration(self, ori_time_duration):
@@ -207,10 +207,10 @@ class LokiRuler(object):
                                self.loki_query_time_end)
         # 解析数据并生成告警字符串
         # # 总体受损
-        total_damage_time_range = ""  # 时间范围
+
         total_damage_service_count = 0  # 服务数量
         # total_damage_service_node_count = 0  # 服务节点数量
-        total_damage_duration_time = 0  # 持续时间
+
         # # 服务受损
         service_damage = {}  # {"oss-api": {"wjh-prod": {"lmbrn": {"file_name_1":1}}}}
         query_result = resp_data["data"]["result"]
@@ -250,9 +250,13 @@ class LokiRuler(object):
         alarm_query_start_time = self.get_single_time(self.loki_query_time_start)  # 精确到小时分钟即可
         alarm_query_end_time = self.get_single_time(self.loki_query_time_end)
         alarm_damage_service_count = total_damage_service_count
-        alarm_damage_time_duration = self.get_minimize_display_damage_time_duration(
-            self.now_time_second - self.init_service_damage_time_point["total"])
 
+        if self.init_service_damage_time_point["total"] != 0:
+            alarm_damage_time_duration = "(首次)"
+        else:
+            alarm_damage_time_duration = self.get_minimize_display_damage_time_duration(
+                self.now_time_second - self.init_service_damage_time_point["total"])
+        self.init_service_damage_time_point["total"] = self.now_time_second
         ""
         total_alarm_msg = self.task_data["alarm"]["head_template"].format(query_start_time=alarm_query_start_time,
                                                                           query_end_time=alarm_query_end_time,
