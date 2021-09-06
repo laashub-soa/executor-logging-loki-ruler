@@ -213,7 +213,7 @@ class LokiRuler(object):
                                self.loki_query_time_end)
         # 解析数据并生成告警字符串
         # # 总体受损
-
+        logger.debug(resp_data)
         total_damage_service_count = 0  # 服务数量
         # total_damage_service_node_count = 0  # 服务节点数量
 
@@ -273,12 +273,7 @@ class LokiRuler(object):
         self.get_init_service_damage_time_point()
         total_alarm_msg, query_loki_result = self.query_data()
         logger.debug(total_alarm_msg)
-        logger.debug(query_loki_result)
-        # 模拟数据
-        query_loki_result = {'vendor-server': {'total_count': 4}, 'delivery-admin': {'total_count': 8},
-                             'oss-api': {'total_count': 1},
-                             'auth-server': {'total_count': 4}, 'wms-server': {'total_count': 1}}
-
+        logger.debug("query_loki_result: ", query_loki_result)
         detail_alarm_msg, at_phone_list = self.gen_detail_alarm_msg(query_loki_result)
         logger.debug(detail_alarm_msg)
         logger.debug(at_phone_list)
