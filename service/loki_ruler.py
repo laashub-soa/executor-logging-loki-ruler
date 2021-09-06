@@ -14,7 +14,9 @@ class LokiRuler(object):
     def __init__(self, task_persistent_path, task_data):
         # 任务初始数据
         self.task_persistent_path = task_persistent_path
-        self.init_service_damage_time_point = os.path.join(self.task_persistent_path, "init_service_damage_time_point")
+        self.init_service_damage_time_point_path = os.path.join(self.task_persistent_path,
+                                                                "init_service_damage_time_point")
+        self.init_service_damage_time_point = None
         self.task_data = task_data
         # 任务局部数据
         self.damage_time_point = {  # 受损时间点
@@ -26,15 +28,20 @@ class LokiRuler(object):
 
     # 获取上次业务受损时间点
     def get_init_service_damage_time_point(self):
-        if not os.path.exists(self.init_service_damage_time_point):
-            return {}
-        with open(self.init_service_damage_time_point, "r", encoding="utf-8")as f:
-            return json.loads(f.read())
+        if not os.path.exists(self.init_service_damage_time_point_path):
+            self.init_service_damage_time_point = {
+                "total": 0,
+                "each": {},
+            }
+        else:
+            with open(self.init_service_damage_time_point_path, "r", encoding="utf-8")as f:
+                self.init_service_damage_time_point = json.loads(f.read())
+        return self.init_service_damage_time_point
 
     # 设置初始化业务受损时间点
-    def set_init_service_damage_time_point(self, init_service_damage_time_point):
-        with open(self.init_service_damage_time_point, "w", encoding="utf-8")as f:
-            f.write(json.dumps(init_service_damage_time_point))
+    def set_init_service_damage_time_point(self):
+        with open(self.init_service_damage_time_point_path, "w", encoding="utf-8")as f:
+            f.write(json.dumps(self.init_service_damage_time_point))
 
     # 获取关注服务的用户及手机号码
     def get_service_follow_of_user_name_phone_list(self, service_name):
@@ -62,11 +69,32 @@ class LokiRuler(object):
                 user_phone_list.append(user_phone)
         return user_name_list, user_phone_list
 
+    # 获取最精简化的时间点
+    def get_single_time(self, time_point):
+        time_point_timestamp = time_point / 1000000 / 1000
+        target_datetime = datetime.datetime.fromtimestamp(time_point_timestamp)
+        return str(target_datetime.hour) + "-" + str(target_datetime.minute)
+
     # 获取最小化显示受损时间持续段
-    def get_minimize_display_damage_time_duration(self, basic_time_duration):
-        # TODO 没有数据, 暂时迟缓
+    def get_minimize_display_damage_time_duration(self, ori_time_duration):
+        """
+        :param ori_time_duration: 原始持续时间(单位秒钟)
+        :return:
+        """
         result = ""
-        result = str(basic_time_duration) + "s"
+        if ori_time_duration > 60:  # 超过1个分钟
+            if ori_time_duration > 3600:  # 超过1个小时
+                if ori_time_duration > 86400:  # 超过1个天
+                    if ori_time_duration > 2678400:  # 超过1个月
+                        result += str(ori_time_duration / 2678400) + "月"
+                        ori_time_duration = ori_time_duration % 2678400
+                    result += str(ori_time_duration / 86400) + "天"
+                    ori_time_duration = ori_time_duration % 86400
+                result += str(ori_time_duration / 3600) + "时"
+                ori_time_duration = ori_time_duration % 3600
+            result += str(ori_time_duration / 60) + "分"
+            ori_time_duration = ori_time_duration % 60
+        result = str(ori_time_duration) + "秒"
         return result
 
     # 获取服务点击链接
@@ -187,10 +215,11 @@ class LokiRuler(object):
         service_damage = {}  # {"oss-api": {"wjh-prod": {"lmbrn": {"file_name_1":1}}}}
         query_result = resp_data["data"]["result"]
         if len(query_result) < 1:  # 当没有查询到异常日志项的时候
+            # (重新)初始化数据
             init_service_damage_time_point = self.get_init_service_damage_time_point()
             init_service_damage_time_point["total"] = 0
             init_service_damage_time_point["each"] = {}
-            self.set_init_service_damage_time_point(init_service_damage_time_point)
+
             return total_alarm_msg, {}
         # 遍历loki查询数据
         query_result = resp_data["data"]["result"]
@@ -217,10 +246,23 @@ class LokiRuler(object):
             #     cur_service_damage[service_node_name] = {}
             # cur_service_damage[service_node_name] = service_node_count
 
+        # 生成总体告警头
+        alarm_query_start_time = self.get_single_time(self.loki_query_time_start)  # 精确到小时分钟即可
+        alarm_query_end_time = self.get_single_time(self.loki_query_time_end)
+        alarm_damage_service_count = total_damage_service_count
+        alarm_damage_time_duration = self.get_minimize_display_damage_time_duration(
+            self.now_time_second - self.init_service_damage_time_point["total"])
+
+        ""
+        total_alarm_msg = self.task_data["alarm"]["head_template"].format(query_start_time=alarm_query_start_time,
+                                                                          query_end_time=alarm_query_end_time,
+                                                                          damage_service_count=alarm_damage_service_count,
+                                                                          damage_time_duration=alarm_damage_time_duration) + "\n\n"
         return total_alarm_msg, service_damage
 
     def start(self):
         self.now_time_second = int(time.time())
+        self.get_init_service_damage_time_point()
         total_alarm_msg, query_loki_result = self.query_data()
         logger.debug(total_alarm_msg)
         logger.debug(query_loki_result)
@@ -232,6 +274,7 @@ class LokiRuler(object):
         detail_alarm_msg, at_phone_list = self.gen_detail_alarm_msg(query_loki_result)
         logger.debug(detail_alarm_msg)
         logger.debug(at_phone_list)
+        self.set_init_service_damage_time_point()
         # 告警
         access_token = self.task_data["common"]["dingding_webhook_access_token"][0]
         if not self.task_data["alarm"]:
