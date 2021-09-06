@@ -2,6 +2,7 @@
 ```shell
 
 pip install requests
+pip install PyYAML
 ```
 
 ```shell

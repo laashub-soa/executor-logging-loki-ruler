@@ -11,4 +11,5 @@ RUN find . -name "*.py" |xargs rm -rf
 # 声明
 MAINTAINER tristan "https://github.com/laashub-soa/executor-logging-loki-ruler.git"
 VOLUME /usr/src/app/configs
+VOLUME /usr/src/app/temp
 CMD [ "python", "./setup.pyc" ]
