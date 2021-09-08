@@ -275,19 +275,30 @@ class LokiRuler(object):
         return total_alarm_msg, service_damage
 
     def start(self):
-        self.now_time_second = int(time.time())
-        self.get_init_service_damage_time_point()
-        total_alarm_msg, query_loki_result = self.query_data()
-        logger.debug(total_alarm_msg)
-        logger.debug("query_loki_result: ", query_loki_result)
-        detail_alarm_msg, at_phone_list = self.gen_detail_alarm_msg(query_loki_result)
-        logger.debug(detail_alarm_msg)
-        logger.debug(at_phone_list)
-        self.set_init_service_damage_time_point()
-        # 告警
         access_token = self.task_data["common"]["dingding_webhook_access_token"][0]
-        if not self.task_data["alarm"]["is_at"]:
-            at_phone_list = []
-        alarm_result = dingding_webhook.alarm(access_token, "logging", total_alarm_msg + detail_alarm_msg,
-                                              at_phone_list)
-        logger.debug(alarm_result)
+        try:
+            self.now_time_second = int(time.time())
+            self.get_init_service_damage_time_point()
+            total_alarm_msg, query_loki_result = self.query_data()
+            logger.debug(total_alarm_msg)
+            logger.debug("query_loki_result: ", query_loki_result)
+            detail_alarm_msg, at_phone_list = self.gen_detail_alarm_msg(query_loki_result)
+            logger.debug(detail_alarm_msg)
+            logger.debug(at_phone_list)
+            self.set_init_service_damage_time_point()
+            # 告警
+            if not self.task_data["alarm"]["is_at"]:
+                at_phone_list = []
+            alarm_result = dingding_webhook.alarm(access_token, "logging", total_alarm_msg + detail_alarm_msg,
+                                                  at_phone_list)
+            logger.debug(alarm_result)
+        except Exception as e:
+            import traceback, sys
+            traceback.print_exc()  # 打印异常信息
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            error = str(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+            msg_template_details = error
+            logger.debug(msg_template_details)
+            msg_template_details = str(e)
+            alarm_result = dingding_webhook.alarm(access_token, "logging", msg_template_details, [])
+            logger.debug(alarm_result)
