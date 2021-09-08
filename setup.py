@@ -2,6 +2,7 @@ import logging
 import os
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from __init__ import init
 from __init__ import project_temp_path
@@ -35,11 +36,9 @@ if __name__ == '__main__':
     # 调度频率为trigger中cron的值
     # 或者自定义解析
     for item in app_conf["tasks"]:
-        common_job(item, app_conf["tasks"][item])
-
-        # sched.add_job(common_job, CronTrigger.from_crontab(app_conf["tasks"][item]["trigger"]["cron"]),
-        #               args=[item, app_conf["tasks"][item]])
-    # logger.debug("server is start")
-    # sched.start()
-
-    # 调试
+        # common_job(item, app_conf["tasks"][item])
+        sched.add_job(common_job, CronTrigger.from_crontab(app_conf["tasks"][item]["trigger"]["cron"]),
+                      args=[item, app_conf["tasks"][item]])
+        logger.debug("add scheduler job: %s" % item)
+    logger.debug("server is start")
+    sched.start()

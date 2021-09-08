@@ -217,7 +217,7 @@ class LokiRuler(object):
                                self.loki_query_time_end)
         # 解析数据并生成告警字符串
         # # 总体受损
-        # logger.debug(resp_data)
+        logger.debug(resp_data)
         total_damage_service_count = 0  # 服务数量
         # total_damage_service_node_count = 0  # 服务节点数量
 
@@ -265,6 +265,7 @@ class LokiRuler(object):
 
         if self.init_service_damage_time_point["total"] == 0:
             alarm_damage_time_duration = "(首次)"
+            self.init_service_damage_time_point["total"] = self.now_time_second
         else:
             alarm_damage_time_duration = self.get_minimize_display_damage_time_duration(
                 self.now_time_second - self.init_service_damage_time_point["total"])
