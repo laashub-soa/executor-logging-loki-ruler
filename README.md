@@ -109,11 +109,11 @@ tasks:
 ```
 yum install -y wegt unzip
 mkdir executor-logging-loki-ruler && cd executor-logging-loki-ruler
-wget https://github.com/laashub-soa/executor-logging-loki-ruler/archive/refs/tags/v0.0.1.zip
-unzip v0.0.1.zip && cd executor-logging-loki-ruler-0.0.1
+wget https://github.com/laashub-soa/executor-logging-loki-ruler/archive/refs/tags/v0.0.2.zip
+unzip v0.0.2.zip && cd executor-logging-loki-ruler-0.0.2
 
-docker build -t tanshilindocker/executor-logging-loki-ruler:0.0.1 -f deploy/Dockerfile .
+docker build -t tanshilindocker/executor-logging-loki-ruler:0.0.2 -f deploy/Dockerfile .
 docker login  --username="" --password=""
-docker push  tanshilindocker/executor-logging-loki-ruler:0.0.1
+docker push  tanshilindocker/executor-logging-loki-ruler:0.0.2
 ```
 
