@@ -101,7 +101,11 @@ class LokiRuler(object):
 
     # 获取服务点击链接
     def get_query_service_url(self, service_name):
-        query_service_url = self.task_data["alarm"]["loki_click_base_url"].replace("{SERVICE_NAME}", service_name)
+        query_service_url = self.task_data["alarm"]["loki_click_base_url"] \
+            .replace("{SERVICE_NAME}", service_name) \
+            .replace("{QUERY_FROM_TIME}", str(int(self.loki_query_time_start / 1000000))) \
+            .replace("{QUERY_TO_TIME}", str(int(self.loki_query_time_end / 1000000)))
+        logger.debug(query_service_url)
         return self.task_data["alarm"]["loki_click_base_prefix"] + parse.quote(query_service_url)
 
     def gen_detail_alarm_msg(self, ori_alarm_data):
@@ -255,6 +259,8 @@ class LokiRuler(object):
         # 生成总体告警头
         alarm_query_start_time = self.get_single_time(self.loki_query_time_start)  # 精确到小时分钟即可
         alarm_query_end_time = self.get_single_time(self.loki_query_time_end)
+        logger.debug(
+            "alarm_query_start_time: %s, alarm_query_end_time: %s" % (alarm_query_start_time, alarm_query_end_time))
         alarm_damage_service_count = total_damage_service_count
 
         if self.init_service_damage_time_point["total"] == 0:
