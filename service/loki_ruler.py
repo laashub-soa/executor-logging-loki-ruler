@@ -281,6 +281,8 @@ class LokiRuler(object):
             self.now_time_second = int(time.time())
             self.get_init_service_damage_time_point()
             total_alarm_msg, query_loki_result = self.query_data()
+            if len(query_loki_result.keys()) < 1:
+                return
             logger.debug(total_alarm_msg)
             logger.debug("query_loki_result: ", query_loki_result)
             detail_alarm_msg, at_phone_list = self.gen_detail_alarm_msg(query_loki_result)
