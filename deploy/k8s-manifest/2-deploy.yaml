@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: executor-logging-loki-ruler
+  namespace: logging-loki-ruler
+spec:
+  storageClassName: local-storage
+  volumeName: logging-loki-ruler-executor-logging-loki-ruler
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+---
+# 服务
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: executor-logging-loki-ruler
+  namespace: logging-loki-ruler
+  labels:
+    app: executor-logging-loki-ruler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: executor-logging-loki-ruler
+  template:
+    metadata:
+      labels:
+        app: executor-logging-loki-ruler
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: sidecar-openvpn-client
+          image: laashubsoa/sidecar-openvpn-client:0.0.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /etc/openvpn/client
+              name: sidecar-openvpn-client
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+              ephemeral-storage: 1Gi
+            limits:
+              cpu: 5000m
+              memory: 5000Mi
+              ephemeral-storage: 10Gi
+        - name: executor-logging-loki-ruler
+          image: tanshilindocker/executor-logging-loki-ruler:0.0.1
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+              ephemeral-storage: 1Gi
+            limits:
+              cpu: 5000m
+              memory: 5000Mi
+              ephemeral-storage: 10Gi
+          volumeMounts:
+            - mountPath: /usr/src/app/configs
+              name: executor-logging-loki-ruler-application-conf
+            - mountPath: /usr/src/app/temp
+              name: executor-logging-loki-ruler-application-temp
+      volumes:
+        - name: sidecar-openvpn-client
+          configMap:
+            name: sidecar-openvpn-client
+        - name: executor-logging-loki-ruler-application-conf
+          configMap:
+            name: executor-executor-logging-loki-ruler
+        - name: executor-logging-loki-ruler-application-temp
+          persistentVolumeClaim:
+            claimName: executor-logging-loki-ruler

@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: executor-executor-logging-loki-ruler
+  namespace: logging-loki-ruler
+data:
+  application.yaml: |
+    test

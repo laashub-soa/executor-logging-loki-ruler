@@ -102,3 +102,18 @@ tasks:
       loki_click_base_url: '["{QUERY_FROM_TIME}","{QUERY_TO_TIME}","Loki",{"expr":"{job=\"service_log\",replicaset=\"{SERVICE_NAME}\"}|~\"ERROR|Exception\"!=\"nacos\"!=\"slow sql\"!=\"404\"!=\"ErrorCodeException\"!=\"Target object must not be null\"!=\"Your request params is invalid\"!=\"核算扩展计算\"!=\"核算金额\"!=\"参数缺失\"!=\"解析日志参数异常\""}]'
 ```
 
+# 部署
+
+
+
+```
+yum install -y wegt unzip
+mkdir executor-logging-loki-ruler && cd executor-logging-loki-ruler
+wget https://github.com/laashub-soa/executor-logging-loki-ruler/archive/refs/tags/v0.0.1.zip
+unzip v0.0.1.zip && cd executor-logging-loki-ruler-0.0.1
+
+docker build -t tanshilindocker/executor-logging-loki-ruler:0.0.1 -f deploy/Dockerfile .
+docker login  --username="" --password=""
+docker push  tanshilindocker/executor-logging-loki-ruler:0.0.1
+```
+

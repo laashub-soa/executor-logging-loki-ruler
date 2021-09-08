@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sidecar-openvpn-client
+  namespace: logging-loki-ruler
+data:
+  client.conf: |
+    test
