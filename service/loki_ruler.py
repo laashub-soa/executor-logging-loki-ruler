@@ -288,7 +288,6 @@ class LokiRuler(object):
             detail_alarm_msg, at_phone_list = self.gen_detail_alarm_msg(query_loki_result)
             logger.debug(detail_alarm_msg)
             logger.debug(at_phone_list)
-            self.set_init_service_damage_time_point()
             # 告警
             if not self.task_data["alarm"]["is_at"]:
                 at_phone_list = []
@@ -305,3 +304,5 @@ class LokiRuler(object):
             msg_template_details = str(e)
             alarm_result = dingding_webhook.alarm(access_token, "logging", msg_template_details, [])
             logger.debug(alarm_result)
+        finally:
+            self.set_init_service_damage_time_point()
